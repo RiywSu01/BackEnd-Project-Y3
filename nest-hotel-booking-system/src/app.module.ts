@@ -6,9 +6,10 @@ import { BookingsModule } from './bookings/bookings.module';
 import { SearchModule } from './search/search.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { HealthModule } from './health/health.module';
+import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
-  imports: [RoomsModule, BookingsModule, SearchModule, NotificationsModule, HealthModule],
+  imports: [RoomsModule, BookingsModule, SearchModule, NotificationsModule, HealthModule, PrismaModule],
   controllers: [AppController],
   providers: [AppService],
 })
