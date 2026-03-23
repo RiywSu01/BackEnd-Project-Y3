@@ -9,8 +9,9 @@ import { GetUser } from 'src/auth/declarators/GetUserJWT-Payload';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  //Endpoint for User to see their own profile
-  //@UseGuards(JwtAuthGuard) //This line is important to make the @GetUser() Work!!!
+  //Get Own Profile Endpoint (For User to see their own profile)
+  // @UseGuards(JwtAuthGuard, RolesGuard) //This line is important to make the @GetUser() Work!!!
+  // @Roles(users_roles.USER)
   @Get('profile')
   GetProfile(
     @GetUser('username') username: string,
@@ -18,8 +19,9 @@ export class UserController {
     return this.userService.GetProfile(username);
   }
 
-  //Endpoint for User to update their own profile
-  //@UseGuards(JwtAuthGuard)
+  //Update Own Profile Endpoint (For User to update their own profile)
+  // @UseGuards(JwtAuthGuard, RolesGuard) 
+  // @Roles(users_roles.USER)
   @Patch('update-profile')
   UpdateProfile(
     @GetUser('username') username: string,
@@ -28,8 +30,9 @@ export class UserController {
     return this.userService.UpdateProfile(username, updateUserDto);
   }
 
-  //Endpoint for User to update their own password
-  //@UseGuards(JwtAuthGuard)
+  //User Change Password Endpoint (For User to update their own password)
+  // @UseGuards(JwtAuthGuard, RolesGuard) 
+  // @Roles(users_roles.USER)
   @Patch('change-password')
   changePassword(
     @GetUser('username') username: string,

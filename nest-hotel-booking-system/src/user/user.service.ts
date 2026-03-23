@@ -27,7 +27,7 @@ export class UserService {
 
   }
 
-  //User Update Own Profile
+  //User Update Own Profile (For User to see thier own Profile)
   async UpdateProfile(username: string, updateUserDto: UpdateUserDto) {
     try{
       const user = await this.prisma.users.findUnique({where:{username}});
@@ -45,13 +45,13 @@ export class UserService {
         throw new ConflictException(`This email have been already used.`);
       }
 
-      const UpdatedUser = await this.prisma.users.update({
+      const result = await this.prisma.users.update({
         where: { username },
         // Prisma will only update the fields that are actually inside this DTO
         data: updateUserDto, 
       });
 
-      return {message:`Updated successfully.`, data:[UpdatedUser]}
+      return {message:`Profile username:${username} has been updated successfully.`, data: result};
     }catch(error){
       throw new InternalServerErrorException("Something went wrong while updating the profile.");
     }
@@ -62,7 +62,7 @@ export class UserService {
     
   }
 
-  //User Update their own password
+  //User Update their own password (For User to changed their password)
   async changePassword(username: string, dto: ChangePasswordDto){
     try{
       //1.Find user first
@@ -83,12 +83,11 @@ export class UserService {
       //If password matched
       //3.Hash new password
       const hashedPassword = await bcrypt.hash(dto.newPassword, 12);
-  
       this.prisma.users.update({
         where: {username},
         data: {userPassword: hashedPassword}
       });
-      return {message:'Password have been changed successfully.'}
+      return {message:'Password have been changed successfully.'};
 
     }catch(error){
       throw new InternalServerErrorException("Something went wrong while changing password.");
