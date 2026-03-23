@@ -1,34 +1,41 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UnauthorizedException } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { GetUser } from 'src/auth/declarators/GetUserJWT-Payload';
 
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.userService.create(createUserDto);
+  //Endpoint for User to see their own profile
+  //@UseGuards(JwtAuthGuard) //This line is important to make the @GetUser() Work!!!
+  @Get('profile')
+  GetProfile(
+    @GetUser('username') username: string,
+  ) {
+    return this.userService.GetProfile(username);
   }
 
-  @Get()
-  findAll() {
-    return this.userService.findAll();
+  //Endpoint for User to update their own profile
+  //@UseGuards(JwtAuthGuard)
+  @Patch('update-profile')
+  UpdateProfile(
+    @GetUser('username') username: string,
+    @Body() updateUserDto: UpdateUserDto
+  ) {
+    return this.userService.UpdateProfile(username, updateUserDto);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.userService.findOne(+id);
+  //Endpoint for User to update their own password
+  //@UseGuards(JwtAuthGuard)
+  @Patch('change-password')
+  changePassword(
+    @GetUser('username') username: string,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
+    return this.userService.changePassword(username, changePasswordDto);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(+id, updateUserDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.userService.remove(+id);
-  }
 }

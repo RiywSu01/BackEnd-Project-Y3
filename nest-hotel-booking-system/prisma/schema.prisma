@@ -22,6 +22,7 @@ model users {
   id           Int          @id @default(autoincrement())
   username     String       @unique(map: "username") @db.VarChar(30)
   userPassword String       @db.VarChar(60)
+  email        String       @unique(map: "email") @db.VarChar(255)
   roles        users_roles? @default(USER)
 }
 
