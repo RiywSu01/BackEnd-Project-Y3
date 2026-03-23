@@ -6,16 +6,29 @@ datasource db {
   provider = "mysql"
 }
 
+model bookings {
+  id              Int                       @id @default(autoincrement())
+  Room_ID         Int
+  username        String                    @db.VarChar(100)
+  check_in        DateTime                  @db.DateTime(0)
+  check_out       DateTime                  @db.DateTime(0)
+  bookings_status bookings_bookings_status? @default(Pending)
+  rooms           rooms                     @relation(fields: [Room_ID], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "bookings_ibfk_1")
+
+  @@index([Room_ID], map: "Room_ID")
+}
+
 model rooms {
-  id              Int       @id @default(autoincrement())
-  name            String    @db.VarChar(100)
-  description     String?   @db.Text
+  id              Int        @id @default(autoincrement())
+  name            String     @db.VarChar(100)
+  description     String?    @db.Text
   capacity        Int
-  price_per_night Decimal   @db.Decimal(10, 2)
-  image_url       String?   @default("placeholder.png") @db.VarChar(255)
-  is_active       Boolean?  @default(true)
-  created_at      DateTime? @default(now()) @db.DateTime(0)
-  updated_at      DateTime? @default(now()) @db.DateTime(0)
+  price_per_night Decimal    @db.Decimal(10, 2)
+  image_url       String?    @default("placeholder.png") @db.VarChar(255)
+  is_active       Boolean?   @default(true)
+  created_at      DateTime?  @default(now()) @db.DateTime(0)
+  updated_at      DateTime?  @default(now()) @db.DateTime(0)
+  bookings        bookings[]
 }
 
 model users {
@@ -29,4 +42,11 @@ model users {
 enum users_roles {
   USER
   ADMIN
+}
+
+enum bookings_bookings_status {
+  Pending
+  Approved
+  Cancelled
+  Paid
 }
