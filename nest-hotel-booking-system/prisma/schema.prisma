@@ -12,7 +12,7 @@ model rooms {
   description     String?   @db.Text
   capacity        Int
   price_per_night Decimal   @db.Decimal(10, 2)
-  image_url       String?   @db.VarChar(255)
+  image_url       String?   @default("placeholder.png") @db.VarChar(255)
   is_active       Boolean?  @default(true)
   created_at      DateTime? @default(now()) @db.DateTime(0)
   updated_at      DateTime? @default(now()) @db.DateTime(0)
