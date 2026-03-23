@@ -17,12 +17,12 @@ export class UserService {
     try{
       const user = await this.prisma.users.findUnique( {where: {username}} );
       if(!user){ //If user didnt exist
-        throw new NotFoundException(`User name: ${user}, not found.`);
+        throw new NotFoundException(`User name: ${username}, not found.`);
       }
       const {roles ,userPassword, ...Information} = user; // To extract the crucial information out.
-      return Information;
+      return {message: `Successfully retrive ${user.username} profile.`, data: Information};
     }catch(error){
-      throw new InternalServerErrorException("Something went wrong at GetProfile endpoint at UserService.");
+      throw new InternalServerErrorException("Something went wrong while retrive the profile.");
     }
 
   }
@@ -33,7 +33,7 @@ export class UserService {
       const user = await this.prisma.users.findUnique({where:{username}});
       //If user not found
       if(!user){
-        throw new BadRequestException("User not found.");
+        throw new BadRequestException(`User ${username} not found.`);
       }
       //Check if the username already have or not
       if(updateUserDto.username === user.username){
@@ -45,13 +45,15 @@ export class UserService {
         throw new ConflictException(`This email have been already used.`);
       }
 
-      return await this.prisma.users.update({
+      const UpdatedUser = await this.prisma.users.update({
         where: { username },
         // Prisma will only update the fields that are actually inside this DTO
         data: updateUserDto, 
       });
+
+      return {message:`Updated successfully.`, data:[UpdatedUser]}
     }catch(error){
-      throw new InternalServerErrorException("Something went wrong at UpdateProfile endpoint at UserService.");
+      throw new InternalServerErrorException("Something went wrong while updating the profile.");
     }
   
 
@@ -67,7 +69,7 @@ export class UserService {
       const user = await this.prisma.users.findUnique( {where:{username}});
       //If user not found
       if(!user){
-        throw new BadRequestException("User not found.");
+        throw new BadRequestException(`User ${username} not found.`);
       }
   
       //2.Verify old password first
@@ -82,13 +84,14 @@ export class UserService {
       //3.Hash new password
       const hashedPassword = await bcrypt.hash(dto.newPassword, 12);
   
-      return this.prisma.users.update({
+      const UserChangePassword = this.prisma.users.update({
         where: {username},
         data: {userPassword: hashedPassword}
       });
+      return {message:'Password have been changed successfully.'}
 
     }catch(error){
-      throw new InternalServerErrorException("Something went wrong at change-password endpoint at UserService.");
+      throw new InternalServerErrorException("Something went wrong while changing password.");
     }
   }
 
