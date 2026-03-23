@@ -84,7 +84,7 @@ export class UserService {
       //3.Hash new password
       const hashedPassword = await bcrypt.hash(dto.newPassword, 12);
   
-      const UserChangePassword = this.prisma.users.update({
+      this.prisma.users.update({
         where: {username},
         data: {userPassword: hashedPassword}
       });
