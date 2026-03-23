@@ -9,19 +9,8 @@ export class RoomsService {
 
   //Create room
   async Create(createRoomDto: CreateRoomDto){
-    try{
-      const newRoom = {
-        id: createRoomDto.id,
-        name: createRoomDto.name,
-        description: createRoomDto.description,
-        capacity: createRoomDto.capacity,
-        price_per_night: createRoomDto.price_per_night,
-        image_url: createRoomDto.image_url ?? 'placeholder.png',
-        is_active: createRoomDto.is_active ?? true,
-        created_at: createRoomDto.created_at,
-        updated_at: createRoomDto.updated_at,
-      }    
-      const result = await this.prisma.rooms.create({data:newRoom});
+    try{ 
+      const result = await this.prisma.rooms.create({data:createRoomDto});
       return {message:"new room has been created successfully.", data:result};
 
     }catch(error){
