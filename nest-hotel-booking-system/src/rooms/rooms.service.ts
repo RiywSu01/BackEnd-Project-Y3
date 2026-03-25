@@ -1,102 +1,97 @@
-import { Injectable, NotFoundException, Logger, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException, UploadedFile} from '@nestjs/common';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
-import {PrismaService} from '../prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class RoomsService {
-  constructor(private readonly prisma: PrismaService) {}  
+  constructor(private readonly prisma: PrismaService) {}
 
-  //Create room
-  async Create(createRoomDto: CreateRoomDto){
-    try{ 
-      const result = await this.prisma.rooms.create({data:createRoomDto});
-      return {message:"new room has been created successfully.", data:result};
-
-    }catch(error){
-      throw new BadRequestException('Please provided the information.');
+  // FR-8: Create room
+  async Create(createRoomDto: CreateRoomDto) {
+    if (!createRoomDto.name || !createRoomDto.capacity || !createRoomDto.price_per_night) {
+      throw new BadRequestException('Name, capacity, and price_per_night are required.');
     }
+    const result = await this.prisma.rooms.create({ data: createRoomDto });
+    return { message: 'Room created successfully.', data: result };
   }
 
-  //Edited/Updated selected room by ID
-  async EditRoom(id :number){
-    try{
-      const room = await this.prisma.rooms.findUnique( { where:{ id } } );
-      if(!room){
-        throw new NotFoundException(`Room id:${id} not found.`);
-      }
-      const result =  await this.prisma.rooms.update({
+  // FR-9: Edit room (FIXED - was passing class instead of instance)
+  async EditRoom(id: number, updateRoomDto: UpdateRoomDto) {
+    const room = await this.prisma.rooms.findUnique({ where: { id } });
+    if (!room) {
+      throw new NotFoundException(`Room id:${id} not found.`);
+    }
+    try {
+      const result = await this.prisma.rooms.update({
         where: { id },
-        // Prisma will only update the fields that are actually inside this DTO
-        data: UpdateRoomDto, 
+        data: { ...updateRoomDto, updated_at: new Date() },
       });
-      return {message:`Room id:${id} has been updated successfully.`, data:result};
-
-    }catch(error){
-      throw new InternalServerErrorException(`Something went wrong while updating the room id${id} information.`);
+      return { message: `Room id:${id} updated successfully.`, data: result };
+    } catch (error) {
+      throw new InternalServerErrorException(`Something went wrong while updating room id:${id}.`);
     }
   }
 
-  //Delete rooms by ID
-  async DeleteRoom(id:number){
-    try{
-      const room = await this.prisma.rooms.findUnique({where:{id}});
-      if(!room){
-        throw new NotFoundException(`Room id:${id} not found`);
-      }
-      await this.prisma.rooms.delete({ where: { id: id } });
-      return {message:`Room id:${id} has been deleted successfully.`};
-    }catch(error){
-      throw new InternalServerErrorException(`Something went wrong while deleting the room id:${id}.`);
+  // FR-10: Delete room
+  async DeleteRoom(id: number) {
+    const room = await this.prisma.rooms.findUnique({ where: { id } });
+    if (!room) {
+      throw new NotFoundException(`Room id:${id} not found.`);
     }
+    await this.prisma.rooms.delete({ where: { id } });
+    return { message: `Room id:${id} deleted successfully.` };
   }
 
-  //Retreive all rooms
+  // FR-12: List all rooms
   async FindAllRooms() {
-    try{
-      const allrooms = await this.prisma.rooms.findMany();
-      if(!allrooms){
-        throw new NotFoundException('There is no rooms right now.');
-      }
-      return {message:'All rooms has been retrieved successfully.', data: allrooms};
-    }catch(error){
-      throw new InternalServerErrorException(`Something went wrong while retrieved all rooms.`);
-    }
+    const allRooms = await this.prisma.rooms.findMany();
+    return { message: 'All rooms retrieved successfully.', data: allRooms };
   }
 
-  //retreive one room by ID
+  // FR-13 + FR-16: Get one room (includes image_url)
   async FindARoom(id: number) {
-    try{
-      const room = await this.prisma.rooms.findUnique({where:{ id }});
-      if(!room){ 
-        throw new NotFoundException(`Room id:${id} not found.`);
-      }
-      return {message:`Room id:${id} details has been retrieved successfully.`, data:room};
-    }catch(error){
-      throw new InternalServerErrorException(`Something went wrong while retrieved the room id:${id}.`);
+    const room = await this.prisma.rooms.findUnique({ where: { id } });
+    if (!room) {
+      throw new NotFoundException(`Room id:${id} not found.`);
     }
+    return { message: `Room id:${id} retrieved successfully.`, data: room };
   }
 
-  //update the room status to be FALSE
+  // FR-10: Disable room
   async Disable(id: number) {
-    try{
-      await this.prisma.rooms.update({ where:{ id: id }, data:{is_active: false},});
-      return {message:`Room id:${id} has been Deactive.`};
-    }catch(error){
+    const room = await this.prisma.rooms.findUnique({ where: { id } });
+    if (!room) {
       throw new NotFoundException(`Room id:${id} not found.`);
     }
+    await this.prisma.rooms.update({ where: { id }, data: { is_active: false } });
+    return { message: `Room id:${id} has been deactivated.` };
   }
 
-  //update the room status to be TRUE
-  async Enable(id: number){
-    try{
-      await this.prisma.rooms.update({ where:{ id: id }, data:{is_active: true},});
-      return {message:`Room id:${id} has been active.`};
-    }catch(error){
+  // FR-10: Enable room
+  async Enable(id: number) {
+    const room = await this.prisma.rooms.findUnique({ where: { id } });
+    if (!room) {
       throw new NotFoundException(`Room id:${id} not found.`);
     }
+    await this.prisma.rooms.update({ where: { id }, data: { is_active: true } });
+    return { message: `Room id:${id} has been activated.` };
   }
 
-  
-
+  // FR-14 + FR-15: Upload and store room image
+  async UploadImage(id: number, file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('No image file provided.');
+    }
+    const room = await this.prisma.rooms.findUnique({ where: { id } });
+    if (!room) {
+      throw new NotFoundException(`Room id:${id} not found.`);
+    }
+    const imageUrl = `/uploads/rooms/${file.filename}`;
+    const result = await this.prisma.rooms.update({
+      where: { id },
+      data: { image_url: imageUrl },
+    });
+    return { message: `Image uploaded for room id:${id}.`, data: result };
+  }
 }

@@ -1,65 +1,98 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, ParseIntPipe, UploadedFile, UseInterceptors,} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { RoomsService } from './rooms.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
-// import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-// import { RolesGuard } from '../auth/guards/roles.guard';
-// import { Roles } from '../auth/declarators/roles.declarator';
-// import { users_roles } from '@prisma/client';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { users_roles } from '@prisma/client';
 
 @Controller('rooms')
 export class RoomsController {
   constructor(private readonly roomsService: RoomsService) {}
 
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles(users_roles.ADMIN)
+  // FR-8: Admin create room
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(users_roles.ADMIN)
   @Post()
   Create(@Body() createRoomDto: CreateRoomDto) {
     return this.roomsService.Create(createRoomDto);
   }
 
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles(users_roles.ADMIN)
-  @Patch(':id/Edit')
-  EditRoom(@Param('id') id: string) {
-    return this.roomsService.EditRoom(+id);
+  // FR-9: Admin edit room
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(users_roles.ADMIN)
+  @Patch(':id/edit')
+  EditRoom(@Param('id', ParseIntPipe) id: number, @Body() updateRoomDto: UpdateRoomDto) {
+    return this.roomsService.EditRoom(id, updateRoomDto);
   }
 
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles(users_roles.ADMIN)
+  // FR-10: Admin delete/deactivate room
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(users_roles.ADMIN)
   @Delete(':id/delete')
-  DeleteRoom(@Param('id') id: string) {
-    return this.roomsService.DeleteRoom(+id);
+  DeleteRoom(@Param('id', ParseIntPipe) id: number) {
+    return this.roomsService.DeleteRoom(id);
   }
-  
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles(users_roles.ADMIN, users_roles.USER)
+
+  // FR-10: Admin disable room
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(users_roles.ADMIN)
+  @Patch(':id/disable')
+  Disable(@Param('id', ParseIntPipe) id: number) {
+    return this.roomsService.Disable(id);
+  }
+
+  // FR-10: Admin enable room
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(users_roles.ADMIN)
+  @Patch(':id/enable')
+  Enable(@Param('id', ParseIntPipe) id: number) {
+    return this.roomsService.Enable(id);
+  }
+
+  // FR-14: Admin upload room image
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(users_roles.ADMIN)
+  @Post(':id/upload-image')
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './uploads/rooms',
+        filename: (req, file, cb) => {
+          const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, `room-${req.params.id}-${unique}${extname(file.originalname)}`);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        const allowed = /\.(jpg|jpeg|png|webp)$/i;
+        cb(null, allowed.test(file.originalname));
+      },
+    }),
+  )
+  UploadImage(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.roomsService.UploadImage(id, file);
+  }
+
+  // FR-12: List all rooms (public)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(users_roles.ADMIN, users_roles.USER)
   @Get()
   FindAllRooms() {
     return this.roomsService.FindAllRooms();
   }
 
-
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles(users_roles.ADMIN, users_roles.USER)
+  // FR-13: Get room details (public)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(users_roles.ADMIN, users_roles.USER)
   @Get(':id')
-  FindARoom(@Param('id') id: string) {
-    return this.roomsService.FindARoom(+id);
+  FindARoom(@Param('id', ParseIntPipe) id: number) {
+    return this.roomsService.FindARoom(id);
   }
-
-
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles(users_roles.ADMIN)
-  @Patch(':id/disable')
-  Update(@Param('id') id: string) {
-    return this.roomsService.Disable(+id);
-  }
-
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles(users_roles.ADMIN)
-  @Patch(':id/enable')
-  Enable(@Param('id') id: string) {
-    return this.roomsService.Enable(+id);
-  }
-
 }

@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
-import { GetUser } from '../auth/declarators/GetUserJWT-Payload';
+import { GetUser } from '../auth/decorators/GetUserJWT-Payload';
 import { bookings_bookings_status } from '@prisma/client';
 
 @Controller('bookings')
