@@ -40,6 +40,8 @@
    price_per_night DECIMAL(10,2) NOT NULL,   -- Price per night
    image_url VARCHAR(255) DEFAULT 'placeholder.png', -- Image URL or path
    is_active BOOLEAN DEFAULT TRUE,            -- Availability status
+   start_date DATETIME NOT NULL,				-- Available date (start)
+   end_date DATETIME NOT NULL,					-- Available date (end)
    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,  -- created date
    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP   -- updated date
      ON UPDATE CURRENT_TIMESTAMP
@@ -50,10 +52,9 @@
 -- Create bookings Table
 -- ============================
   CREATE TABLE bookings (
-   id INT AUTO_INCREMENT PRIMARY KEY,       	-- booking id
-   Room_ID INT NOT NULL,
+   Booking_ID INT AUTO_INCREMENT PRIMARY KEY,       	-- booking id
+   Room_ID INT NOT NULL,						-- Room id that user select
    username VARCHAR(100) NOT NULL,              -- who booking (username)
-   FOREIGN KEY (Room_ID) REFERENCES rooms(id),       -- Room id (room that user select to booking)
    check_in DATETIME NOT NULL,                  -- check_in date/time
    check_out DATETIME NOT NULL,                 -- check_out date/time
    bookings_status ENUM('Pending', 'Approved', 'Cancelled', 'Paid') DEFAULT 'Pending' -- Bookings status
@@ -71,11 +72,11 @@
  -- ============================
  -- Insert Sample rooms
  -- ============================
- INSERT INTO rooms (name, description, capacity, price_per_night, image_url, is_active) VALUES
- ('Standard Room 101', 'Standard room with garden view', 2, 1800.00, '/images/room101.jpg', TRUE);
+ INSERT INTO rooms (name, description, capacity, price_per_night, image_url, is_active, start_date, end_date) VALUES
+ ('Standard Room 101', 'Standard room with garden view', 2, 1800.00, '/images/room101.jpg', TRUE, '2026-03-01 14:00:00', '2026-06-01 14:00:00');
  
- INSERT INTO rooms (name, description, capacity, price_per_night, image_url, is_active) VALUES
- ('Standard Room 102', 'Standard room with swimming pool', 2, 2400.00, '/images/room102.jpg', TRUE);
+ INSERT INTO rooms (name, description, capacity, price_per_night, image_url, is_active, start_date, end_date) VALUES
+ ('Standard Room 102', 'Standard room with swimming pool', 2, 2400.00, '/images/room102.jpg', TRUE, '2026-01-01 13:00:00', '2026-04-01 15:00:00');
  
  
  -- ============================
