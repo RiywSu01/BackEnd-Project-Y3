@@ -1,10 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  InternalServerErrorException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import {BadRequestException, ConflictException, Injectable, InternalServerErrorException, UnauthorizedException,} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from '../user/dto/create-user.dto';
@@ -59,12 +53,12 @@ export class AuthService {
 
     const user = await this.prisma.users.findUnique({ where: { username: dto.username } });
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials.');
+      throw new UnauthorizedException(`Username :${dto.username} not found.`);
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.userPassword);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials.');
+      throw new UnauthorizedException('Password is incorrect, please retry again.');
     }
 
     const payload = { sub: user.id, username: user.username, roles: user.roles };
@@ -77,7 +71,7 @@ export class AuthService {
     };
   }
 
-  // FR-2: Logout (blacklist token)
+  // FR-2: Logout (blacklist token) //just add the token to the blacklist, didnt delete it.
   async logout(token: string) {
     if (token) {
       this.tokenBlacklist.add(token);
@@ -85,6 +79,7 @@ export class AuthService {
     return { message: 'Logged out successfully.' };
   }
 
+  // This function is not have endpoint to called yet
   isTokenBlacklisted(token: string): boolean {
     return this.tokenBlacklist.has(token);
   }

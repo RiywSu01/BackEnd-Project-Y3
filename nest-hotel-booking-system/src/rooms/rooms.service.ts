@@ -13,7 +13,7 @@ export class RoomsService {
       throw new BadRequestException('Name, capacity, and price_per_night are required.');
     }
     const result = await this.prisma.rooms.create({ data: createRoomDto });
-    return { message: 'Room created successfully.', data: result };
+    return { message: 'New Room has been created successfully.', data: result };
   }
 
   // FR-9: Edit room (FIXED - was passing class instead of instance)
@@ -27,9 +27,9 @@ export class RoomsService {
         where: { id },
         data: { ...updateRoomDto, updated_at: new Date() },
       });
-      return { message: `Room id:${id} updated successfully.`, data: result };
+      return { message: `Room id:${id} has been updated successfully.`, data: result };
     } catch (error) {
-      throw new InternalServerErrorException(`Something went wrong while updating room id:${id}.`);
+      throw new Error(error);
     }
   }
 
@@ -40,13 +40,16 @@ export class RoomsService {
       throw new NotFoundException(`Room id:${id} not found.`);
     }
     await this.prisma.rooms.delete({ where: { id } });
-    return { message: `Room id:${id} deleted successfully.` };
+    return { message: `Room id:${id} has been deleted successfully.` };
   }
 
   // FR-12: List all rooms
   async FindAllRooms() {
     const allRooms = await this.prisma.rooms.findMany();
-    return { message: 'All rooms retrieved successfully.', data: allRooms };
+    if (!allRooms) {
+      throw new NotFoundException('No rooms found.');
+    }
+    return { message: 'All rooms have been retrieved successfully.', data: allRooms };
   }
 
   // FR-13 + FR-16: Get one room (includes image_url)
@@ -55,7 +58,7 @@ export class RoomsService {
     if (!room) {
       throw new NotFoundException(`Room id:${id} not found.`);
     }
-    return { message: `Room id:${id} retrieved successfully.`, data: room };
+    return { message: `Room id:${id} has been retrieved successfully.`, data: room };
   }
 
   // FR-10: Disable room
