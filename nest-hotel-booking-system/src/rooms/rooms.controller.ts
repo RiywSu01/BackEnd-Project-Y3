@@ -81,16 +81,12 @@ export class RoomsController {
   }
 
   // FR-12: List all rooms (public)
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(users_roles.ADMIN, users_roles.USER)
   @Get()
   FindAllRooms() {
     return this.roomsService.FindAllRooms();
   }
 
   // FR-13: Get room details (public)
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(users_roles.ADMIN, users_roles.USER)
   @Get(':id')
   FindARoom(@Param('id', ParseIntPipe) id: number) {
     return this.roomsService.FindARoom(id);

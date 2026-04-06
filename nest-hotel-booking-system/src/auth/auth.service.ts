@@ -17,20 +17,18 @@ export class AuthService {
 
   // FR-1: Sign up
   async register(dto: CreateUserDto) {
-    if (!dto.username || !dto.password || !dto.email) {
-      throw new BadRequestException('Username, password, and email are required.');
-    }
-
-    const existingUser = await this.prisma.users.findFirst({
-      where: { OR: [{ username: dto.username }, { email: dto.email }] },
-    });
-    if (existingUser) {
-      throw new ConflictException('Username or email already exists.');
-    }
-
-    const hashedPassword = await bcrypt.hash(dto.password, 12);
-
     try {
+      if(!dto.username || !dto.password || !dto.email){
+        throw new BadRequestException('Username, password and email are required.');
+      }
+      const existingUser = await this.prisma.users.findFirst({
+        where: { OR: [{ username: dto.username }, { email: dto.email }] },
+      });
+      if (existingUser) {
+        throw new ConflictException('Username or email already exists.');
+      }
+
+      const hashedPassword = await bcrypt.hash(dto.password, 12);
       const user = await this.prisma.users.create({
         data: {
           username: dto.username,
@@ -47,40 +45,53 @@ export class AuthService {
 
   // FR-2: Login
   async login(dto: LoginDto) {
-    if (!dto.username || !dto.password) {
-      throw new BadRequestException('Username and password are required.');
+    try{
+      if(!dto.username || !dto.password){
+        throw new BadRequestException('Username and password are required.');
+      }
+      const user = await this.prisma.users.findUnique({ where: { username: dto.username } });
+      if (!user) {
+        throw new UnauthorizedException(`Username:'${dto.username}' not found, please make sure you already registered and try again.`);
+      }
+
+      const isPasswordValid = await bcrypt.compare(dto.password, user.userPassword);
+      if (!isPasswordValid) {
+        throw new UnauthorizedException('Password is incorrect, please retry again.');
+      }
+
+      const payload = { sub: user.id, username: user.username, roles: user.roles };
+      const token = this.jwtService.sign(payload);
+
+      return {
+        message: 'Login successful.',
+        access_token: token,
+        user: { id: user.id, username: user.username, email: user.email, roles: user.roles },
+      };
+    }catch(error){
+      throw new InternalServerErrorException('Something went wrong during login.');
     }
-
-    const user = await this.prisma.users.findUnique({ where: { username: dto.username } });
-    if (!user) {
-      throw new UnauthorizedException(`Username :${dto.username} not found.`);
-    }
-
-    const isPasswordValid = await bcrypt.compare(dto.password, user.userPassword);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Password is incorrect, please retry again.');
-    }
-
-    const payload = { sub: user.id, username: user.username, roles: user.roles };
-    const token = this.jwtService.sign(payload);
-
-    return {
-      message: 'Login successful.',
-      access_token: token,
-      user: { id: user.id, username: user.username, email: user.email, roles: user.roles },
-    };
+    
   }
 
   // FR-2: Logout (blacklist token) //just add the token to the blacklist, didnt delete it.
   async logout(token: string) {
-    if (token) {
-      this.tokenBlacklist.add(token);
+    try{
+      if (!token) {
+        throw new BadRequestException('Token is required for logout.');
+      }
+      if (token) {
+        this.tokenBlacklist.add(token);
+      }
+      return { message: 'Logged out successfully.' };
+    }catch(error){
+      throw new InternalServerErrorException('Something went wrong during logout.');
     }
-    return { message: 'Logged out successfully.' };
   }
 
   // This function is not have endpoint to called yet
   isTokenBlacklisted(token: string): boolean {
     return this.tokenBlacklist.has(token);
   }
+
+  
 }

@@ -1,37 +1,37 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 import { GetUser } from '../auth/decorators/GetUserJWT-Payload';
-import { bookings_bookings_status } from '@prisma/client';
+import { bookings_bookings_status, users_roles } from '@prisma/client';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('bookings')
 export class BookingsController {
   constructor(private readonly bookingsService: BookingsService) {}
 
   //List all booking in system endpoint (For Admin to retrieved all booking in system.)
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles(users_roles.ADMIN)
+  @Roles(users_roles.ADMIN)
   @Get('ListAllBooking')
   FindAllBooking() {
     return this.bookingsService.FindAllBooking();
   }
 
   //Change status booking endpoint (For Admin to change the status of the selected booking by ID.)
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles(users_roles.USER)
-  @Patch(':id/:status/Changestatus')
+  @Roles(users_roles.ADMIN)
+  @Patch(':id/:status/ChangeStatus')
   ChangeBookingStatus(
     @Param('id') id: string,             
-    @Param('status') status: bookings_bookings_status,    
-    @Body() updateBookingDto: UpdateBookingDto
+    @Param('status') status: bookings_bookings_status
   ) {
-    return this.bookingsService.ChangeBookingStatus(+id, status, updateBookingDto);
+    return this.bookingsService.ChangeBookingStatus(+id, status);
   }
 
-  //Create booking endpoint (For User to retrieved create thier own booking.)
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles(users_roles.USER)
+  //Create booking endpoint (For User to retrieved create their own booking.)
+  @Roles(users_roles.USER)
   @Post('CreateRoom')
   CreateBooking(
     @GetUser('username') username: string,
@@ -40,16 +40,14 @@ export class BookingsController {
   }
 
   //User's all booking endpoint (For User to retrieve all of their own booking.)
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles(users_roles.USER)
+  @Roles(users_roles.USER)
   @Get('ListAllMyBooking')
   FindAllMyBooking(@GetUser('username') username: string) {
     return this.bookingsService.FindAllMyBooking(username);
   }
 
-  //User's one booking endpoint (For User to see the details of one of their own bookings.)
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles(users_roles.USER)
+  //User find one booking endpoint (For User to see the details of one of their own bookings.)
+  @Roles(users_roles.USER)
   @Get(':id/ListMyBooking')
   FindOneBooking(
     @Param('id') id: string,
