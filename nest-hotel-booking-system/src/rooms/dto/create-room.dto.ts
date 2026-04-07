@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsBoolean, IsDateString, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsDateString, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from "class-validator";
 
 export class CreateRoomDto {
     @IsInt({message: 'Room ID must be an integer.'})
@@ -18,6 +18,7 @@ export class CreateRoomDto {
     @IsInt({message: 'Room capacity must be an integer.'})
     @IsNotEmpty({message: 'Room capacity is required.'})
     @Type(() => Number) // This automatically converts "12" to 12 before validation
+    @Min(1, {message: 'Capacity must be at least 1.'})
     capacity: number;
 
     @IsNumber({},{message: 'Price per night must be a number.'})

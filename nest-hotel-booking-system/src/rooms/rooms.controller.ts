@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, ParseIntPipe, UploadedFile, UseInterceptors,} from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, ParseIntPipe, UploadedFile, UseInterceptors, Query,} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -9,6 +9,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { users_roles } from '@prisma/client';
+import { FilterRoomSearchDto } from './dto/filter-room-search.dto';
 
 @Controller('rooms')
 export class RoomsController {
@@ -84,6 +85,19 @@ export class RoomsController {
   @Get()
   FindAllRooms() {
     return this.roomsService.FindAllRooms();
+  }
+
+  // This route need to be before the @Get(':id') route, otherwise it will treat 'search' as an ID and cause an error. So I put it here.
+  // FR-27+28+29: The system must allow users to search with date range, date range + active status, capacity (User)
+  //Example of endpoints
+  // /rooms/search?checkInDate=2026-04-01T14:00:00Z&checkOutDate=2026-05-05T14:00:00Z
+  // /rooms/search?checkInDate=2026-04-01T14:00:00Z&checkOutDate=2026-05-05T14:00:00Z&is_active=true
+  // /rooms/search?capacity=2
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(users_roles.USER)
+  @Get('search')
+  SearchRooms(@Query () filterRoomSearchDto: FilterRoomSearchDto) {
+    return this.roomsService.SearchRooms(filterRoomSearchDto);
   }
 
   // FR-13: Get room details (public)

@@ -17,7 +17,6 @@ export class AuthService {
 
   // FR-1: Sign up
   async register(dto: CreateUserDto) {
-    try {
       if(!dto.username || !dto.password || !dto.email){
         throw new BadRequestException('Username, password and email are required.');
       }
@@ -38,14 +37,10 @@ export class AuthService {
       });
       const { userPassword, ...result } = user;
       return { message: 'User registered successfully.', data: result };
-    } catch (error) {
-      throw new InternalServerErrorException('Something went wrong during registration.');
-    }
   }
 
   // FR-2: Login
   async login(dto: LoginDto) {
-    try{
       if(!dto.username || !dto.password){
         throw new BadRequestException('Username and password are required.');
       }
@@ -67,15 +62,12 @@ export class AuthService {
         access_token: token,
         user: { id: user.id, username: user.username, email: user.email, roles: user.roles },
       };
-    }catch(error){
-      throw new InternalServerErrorException('Something went wrong during login.');
-    }
-    
   }
+    
+  
 
   // FR-2: Logout (blacklist token) //just add the token to the blacklist, didnt delete it.
   async logout(token: string) {
-    try{
       if (!token) {
         throw new BadRequestException('Token is required for logout.');
       }
@@ -83,9 +75,6 @@ export class AuthService {
         this.tokenBlacklist.add(token);
       }
       return { message: 'Logged out successfully.' };
-    }catch(error){
-      throw new InternalServerErrorException('Something went wrong during logout.');
-    }
   }
 
   // This function is not have endpoint to called yet
