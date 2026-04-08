@@ -61,6 +61,19 @@
  );
  
  
+ -- ============================
+ -- Create notifications Table
+ -- ============================
+ CREATE TABLE notifications (
+	id INT AUTO_INCREMENT PRIMARY KEY, -- notification id
+    username VARCHAR(100) NOT NULL, -- The user who receives the notification
+    message VARCHAR(10000) NOT NULL, -- The actual notification text
+    is_read BOOLEAN DEFAULT FALSE, -- Helps the frontend know if it's a new alert
+    create_at DATETIME DEFAULT CURRENT_TIMESTAMP -- Create date of notification
+ );
+-- ============================================================================================================================================
+-- ============================================================================================================================================
+
  
  -- ============================
  -- Insert Sample user
@@ -90,3 +103,4 @@ INSERT INTO bookings (username, Room_ID, check_in, check_out, bookings_status) V
  SELECT * FROM users;
  SELECT * FROM rooms;
  SELECT * FROM bookings;
+ SELECT * FROM notifications;

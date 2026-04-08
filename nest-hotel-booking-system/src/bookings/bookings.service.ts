@@ -3,10 +3,17 @@ import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { bookings_bookings_status } from '@prisma/client';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import { Logger } from '@nestjs/common';
+import { Booking } from './entities/booking.entity';
 
 @Injectable()
 export class BookingsService {
-  constructor(private readonly prisma: PrismaService) {}  
+  constructor(
+    private readonly prisma: PrismaService,
+    private eventEmitter: EventEmitter2,
+  ) {}
+  private readonly logger = new Logger(BookingsService.name);
 
   //For Admin to retrieved all booking in system
   async FindAllBooking(){
@@ -53,6 +60,10 @@ export class BookingsService {
       if(!result){ 
         throw new InternalServerErrorException('An error occurred while creating the booking.');
       }
+
+      // Emit(trigger) the booking created event with the booking details, Emit the event and pass the booking details as payload to the event listeners that are listening to this event. The event listeners can then use this information to perform any necessary actions, such as sending a notification to the user or updating the availability of the room.
+      this.eventEmitter.emit('booking.created', result);
+
       return {message:"Your booking has been created successfully.", data:result};
   }
 
@@ -95,6 +106,11 @@ export class BookingsService {
       if(!id || !status){
         throw new BadRequestException('Please make sure you have entered the correct booking ID and status and try again.');
       }
+      //To check booking_ID that user input is exist or not (use findUnique() before update() because findUnique() when cant find it the result, it will return "null". But update() didnt throw the null, it throw the P2025 error instead.)
+      const BookingExist = await this.prisma.bookings.findUnique({where: {Booking_ID:id}});
+      if (!BookingExist){
+        throw new NotFoundException(`The booking ID: ${id} not found in the system.`);
+      }
       const result = await this.prisma.bookings.update({ 
         where:{ Booking_ID: id }, 
         data:{bookings_status: status}
@@ -102,7 +118,56 @@ export class BookingsService {
       if(!result){
         throw new NotFoundException(`booking ID:${id} not found.`);
       }
+      // If status  is cancelled, emit the booking cancelled event with the booking details.
+      if( status == "Cancelled"){
+        // Emit the event and pass the booking details as payload to the event listeners that are listening to this event. 
+        this.eventEmitter.emit('booking.cancelled', result);
+      }
       return {message:`The booking ID:${id} status has been changed successfully.`, data: result}
+  }
+
+
+  //FR-30: When a booking is created, the system must record this event so the frontend can inform the user.
+  @OnEvent('booking.created')
+  async CreateBookingEvent(payload: any) {
+    // 1. Log the payload to ensure it has the data you expect
+    this.logger.debug('Received payload in event:', payload);
+    try{
+      const checkInDate = new Date(payload.check_in);
+      const checkOutDate = new Date(payload.check_out);
+      const newMessage = `Success! Your Booking for Room ID:${payload.Room_ID} from ${checkInDate.toDateString()} to ${checkOutDate.toDateString()} has been created successfully.`;
+      await this.prisma.notifications.create({
+        data: {
+          username: payload.username,
+          message: newMessage,
+          is_read: false, // Explicitly marking it as unread
+        }
+      });
+      this.logger.log(`Notification created for ${payload.username}`);
+    }catch(error){
+      // 2. Log the REAL error so you can see what actually broke!
+      this.logger.error('Error occurred while creating booking notification:', error);
+    }
+  }
+
+  //FR-31: When a booking is cancelled, the system must record this event so the frontend can inform the user.
+  @OnEvent('booking.cancelled')
+  async CancelBookingEvent(payload: any) {
+    // 1. Log the payload to ensure it has the data you expect
+    this.logger.debug('Received payload in event:', payload);
+    try{
+      const newMessage = `Your Booking with booking ID:${payload.Booking_ID} has been cancelled successfully.`;
+      await this.prisma.notifications.create({
+        data: {
+          username: payload.username,
+          message: newMessage,
+          is_read: false,
+        }
+      });
+      this.logger.log(`Cancellation notification created for ${payload.username}`);
+    }catch(error){
+      this.logger.error('Error occurred while deleting booking notification:', error);    
+    }
   }
 
 }
