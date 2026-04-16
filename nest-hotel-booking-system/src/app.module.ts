@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { RoomsModule } from './rooms/rooms.module';
@@ -8,13 +9,27 @@ import { PrismaModule } from './prisma/prisma.module';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { CacheModule } from '@nestjs/cache-manager';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 
 @Module({
   imports: [AuthModule, RoomsModule, BookingsModule, HealthModule, PrismaModule, UserModule,
-    // Add EventEmitterModule to catch the events in the system such as create booking.
-    // whenever you use a .forRoot() method on a module inside your root AppModule, it registers those services globally across your entire application, it means you dont need to import the EventEmitterModule in other modules to use the event emitter service.
-    EventEmitterModule.forRoot({ 
+    // Global in-memory cache: TTL 60s, max 100 cached items
+    CacheModule.register({
+      isGlobal: true,
+      ttl: 60000, // 60 seconds in ms
+      max: 100,   // max 100 entries
+    }),
+    // Global rate limiter: 60 requests per 60 seconds by default
+    ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 60000, // 60 seconds window
+        limit: 60,  // max 60 requests per window
+      },
+    ]),
+    EventEmitterModule.forRoot({
       // set this to `true` to use wildcards
       wildcard: false,
       // the delimiter used to segment namespaces
@@ -32,6 +47,13 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     }),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    // Apply ThrottlerGuard globally to all routes
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
-export class AppModule {}
+export class AppModule { }

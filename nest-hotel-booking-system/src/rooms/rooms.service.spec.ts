@@ -309,26 +309,26 @@ describe('RoomsService', () => {
     });
   });
 
-  // ─── FR-14+15: UploadImage() ─────────────────────────────────────────
-  describe('UploadImage()', () => {
-    it('should upload image and update room', async () => {
+  // ─── FR-14+15: UpdateRoomImage() ─────────────────────────────────────
+  describe('UpdateRoomImage()', () => {
+    it('should update room image URL successfully', async () => {
       const room = { id: 1, name: 'Room', image_url: 'placeholder.png' };
-      const mockFile = { filename: 'room-1-123.jpg' } as Express.Multer.File;
+      const newImageUrl = 'https://example.com/new-room.jpg';
 
       mockPrisma.rooms.findUnique.mockResolvedValue(room);
       mockPrisma.rooms.update.mockResolvedValue({
         ...room,
-        image_url: '/uploads/rooms/room-1-123.jpg',
+        image_url: newImageUrl,
       });
 
-      const result = await service.UploadImage(1, mockFile);
+      const result = await service.UpdateRoomImage(1, newImageUrl);
 
-      expect(result.message).toContain('Image uploaded');
-      expect(result.data.image_url).toContain('room-1-123.jpg');
+      expect(result.message).toContain('Image URL updated');
+      expect(result.data.image_url).toBe(newImageUrl);
     });
 
-    it('should throw error if no file provided', async () => {
-      await expect(service.UploadImage(1, null as any)).rejects.toThrow();
+    it('should throw error if no URL provided', async () => {
+      await expect(service.UpdateRoomImage(1, '')).rejects.toThrow();
     });
   });
 });

@@ -1,34 +1,28 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { HealthService } from './health.service';
-import { CreateHealthDto } from './dto/create-health.dto';
-import { UpdateHealthDto } from './dto/update-health.dto';
+import { Controller, Get } from '@nestjs/common';
+import { HealthCheckService, HealthCheck, PrismaHealthIndicator } from '@nestjs/terminus';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { PrismaService } from '../prisma/prisma.service'; 
+import { SkipThrottle } from '@nestjs/throttler';
 
+@ApiTags('Health Check')
+@SkipThrottle() // Health check is used by monitoring tools — skip rate limiting
 @Controller('health')
 export class HealthController {
-  constructor(private readonly healthService: HealthService) {}
+  constructor(
+    private health: HealthCheckService,
+    private prismaHealth: PrismaHealthIndicator, //Built-in Prisma tool
+    private prisma: PrismaService,
+  ) {}
 
-  @Post()
-  create(@Body() createHealthDto: CreateHealthDto) {
-    return this.healthService.create(createHealthDto);
-  }
-
+  @ApiOperation({ summary: 'System Health Check' })
+  @ApiResponse({ status: 200, description: 'Service is healthy' })
+  @ApiResponse({ status: 429, description: 'Rate limit exceeded' })
   @Get()
-  findAll() {
-    return this.healthService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.healthService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateHealthDto: UpdateHealthDto) {
-    return this.healthService.update(+id, updateHealthDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.healthService.remove(+id);
+  @HealthCheck()
+  check() {
+    return this.health.check([
+      // Pass Prisma instance to the built-in pingCheck
+      () => this.prismaHealth.pingCheck('database', this.prisma, {timeout: 5000}), 
+    ]);
   }
 }

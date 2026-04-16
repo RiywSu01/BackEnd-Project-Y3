@@ -1,4 +1,4 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import { PrismaClient } from '@prisma/client';
 import 'dotenv/config';
@@ -7,6 +7,7 @@ import 'dotenv/config';
 export class PrismaService extends PrismaClient
 implements OnModuleInit, OnModuleDestroy
 {
+    private readonly logger = new Logger(PrismaService.name);
     constructor() {
         const databaseUrl = process.env.DATABASE_URL;
         if (!databaseUrl) {
@@ -17,8 +18,10 @@ implements OnModuleInit, OnModuleDestroy
      }
     async onModuleInit() {
         await this.$connect();
+        this.logger.log('Database connection established');
     }
     async onModuleDestroy() {
+        this.logger.log('Database connection closed');
         await this.$disconnect();
     }
     

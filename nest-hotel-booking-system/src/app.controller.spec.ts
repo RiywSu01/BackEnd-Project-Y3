@@ -14,9 +14,9 @@ describe('AppController', () => {
     appController = app.get<AppController>(AppController);
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
-    });
+  it('should be defined', () => {
+    // AppController has no active routes (getHello is commented out).
+    // This test simply confirms the controller bootstraps correctly.
+    expect(appController).toBeDefined();
   });
 });
