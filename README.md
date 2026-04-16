@@ -43,7 +43,7 @@ A production-ready RESTful API for managing hotel room bookings, built with **Ne
                         │  └──────────┘ └─────────┘│
                         └──────────────────────────┘
 ```
-> In **local development**, your client connects directly to NestJS on port `3000`. No Nginx or Docker is required — just Node.js and a MySQL database.
+> In **local development**, client connects directly to NestJS on port `3000`. No Nginx or Docker is required — just Node.js and a MySQL database.
 
 ___
 ### Docker / Production Architecture
@@ -198,7 +198,7 @@ JWT_SECRET=your_jwt_secret_key_here
 # Generate the Prisma client
 npx prisma generate
 
-# Push the schema to your MySQL database (creates all tables)
+# Push the schema to MySQL database (creates all tables)
 npx prisma db push
 ```
 
